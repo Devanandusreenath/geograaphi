@@ -1127,7 +1127,7 @@ def health_check():
 if __name__ == '__main__':
     print("Starting GeoSmart Learning Platform...")
     port = int(os.environ.get('PORT', 5000))
-    debug_mode = os.environ.get('RAILWAY_ENVIRONMENT_NAME') != 'production'
+     debug_mode = os.environ.get('RENDER') is None  # ← NEW LINE
     
     if not debug_mode:
         print(f"Production mode - Server starting on port {port}")
