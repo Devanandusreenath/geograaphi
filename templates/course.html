@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+
+{% block title %}{{ course.title }} - GeoSmart Learn{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="text-white">
+                <i class="fas fa-book"></i> {{ course.title }}
+            </h2>
+            {% if current_user.role == 'teacher' and course.teacher_id == current_user.id %}
+                <a href="{{ url_for('create_lesson', course_id=course.id) }}" class="btn btn-success btn-custom">
+                    <i class="fas fa-plus"></i> Add Lesson
+                </a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-body">
+                <p class="lead">{{ course.description }}</p>
+            </div>
+        </div>
+        
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5><i class="fas fa-list"></i> Lessons</h5>
+            </div>
+            <div class="card-body">
+                {% if lessons %}
+                    {% for lesson in lessons %}
+                        <div class="card lesson-card mb-3">
+                            <div class="card-body">
+                                <div class="row align-items-center">
+                                    <div class="col">
+                                        <h6 class="card-title mb-1">{{ lesson.title }}</h6>
+                                        <p class="card-text text-muted mb-2">{{ lesson.description }}</p>
+                                        
+                                        <div class="d-flex flex-wrap gap-2">
+                                            {% if lesson.video_url %}
+                                                <span class="badge bg-primary"><i class="fas fa-video"></i> Video</span>
+                                            {% endif %}
+                                            {% if lesson.content_file %}
+                                                <span class="badge bg-info"><i class="fas fa-file"></i> Materials</span>
+                                            {% endif %}
+                                            {% if lesson.notes %}
+                                                <span class="badge bg-secondary"><i class="fas fa-sticky-note"></i> Notes</span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <a href="{{ url_for('view_lesson', lesson_id=lesson.id) }}" 
+                                           class="btn btn-primary btn-custom btn-sm">
+                                            <i class="fas fa-play"></i> Start
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-chalkboard fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">No lessons available yet.</p>
+                        {% if current_user.role == 'teacher' and course.teacher_id == current_user.id %}
+                            <a href="{{ url_for('create_lesson', course_id=course.id) }}" class="btn btn-primary btn-custom">
+                                <i class="fas fa-plus"></i> Create First Lesson
+                            </a>
+                        {% endif %}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        {% if current_user.role == 'student' %}
+            <div class="card">
+                <div class="card-header">
+                    <h6><i class="fas fa-chart-line"></i> Your Progress</h6>
+                </div>
+                <div class="card-body">
+                    {% set total_lessons = lessons|length %}
+                    {% set completed_count = 0 %}
+                    {% for lesson in lessons %}
+                        {% for prog in progress if prog.lesson_id == lesson.id and prog.completed %}
+                            {% set completed_count = completed_count + 1 %}
+                        {% endfor %}
+                    {% endfor %}
+                    
+                    {% if total_lessons > 0 %}
+                        <div class="text-center mb-3">
+                            <h4>{{ ((completed_count / total_lessons) * 100) | round }}%</h4>
+                            <p class="text-muted">{{ completed_count }}/{{ total_lessons }} lessons completed</p>
+                        </div>
+                        <div class="progress">
+                            <div class="progress-bar bg-success" role="progressbar" 
+                                 style="width: {{ (completed_count / total_lessons * 100) | round }}%"></div>
+                        </div>
+                    {% else %}
+                        <p class="text-muted text-center">No lessons yet</p>
+                    {% endif %}
+                </div>
+            </div>
+        {% endif %}
+        
+        <!-- Course Information Card -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h6><i class="fas fa-info-circle"></i> Course Information</h6>
+            </div>
+            <div class="card-body">
+                <ul class="list-unstyled mb-0">
+                    <li><strong>Total Lessons:</strong> {{ lessons|length }}</li>
+                    <li><strong>Created:</strong> {{ course.created_at.strftime('%Y-%m-%d') }}</li>
+                    {% if current_user.role == 'student' and total_lessons > 0 %}
+                        <li><strong>Your Progress:</strong> {{ completed_count }}/{{ total_lessons }}</li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+        
+        <!-- Quick Actions -->
+        {% if current_user.role == 'student' %}
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h6><i class="fas fa-bolt"></i> Quick Actions</h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        {% if lessons %}
+                            <a href="{{ url_for('view_lesson', lesson_id=lessons[0].id) }}" 
+                               class="btn btn-primary btn-custom btn-sm">
+                                <i class="fas fa-play"></i> {% if completed_count > 0 %}Continue{% else %}Start{% endif %} Learning
+                            </a>
+                        {% endif %}
+                        
+                        <a href="{{ url_for('ask_question') }}" class="btn btn-info btn-custom btn-sm">
+                            <i class="fas fa-question-circle"></i> Ask AI Assistant
+                        </a>
+                        
+                        <a href="{{ url_for('leaderboard') }}" class="btn btn-warning btn-custom btn-sm">
+                            <i class="fas fa-trophy"></i> View Leaderboard
+                        </a>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

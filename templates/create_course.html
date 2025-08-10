@@ -1,0 +1,44 @@
+<!-- templates/create_course.html -->
+{% extends "base.html" %}
+
+{% block title %}Create Course - GeoSmart Learn{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h4><i class="fas fa-plus"></i> Create New Course</h4>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <div class="mb-3">
+                        <label for="title" class="form-label">Course Title *</label>
+                        <input type="text" class="form-control" id="title" name="title" 
+                               placeholder="e.g., World Geography Fundamentals" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Course Description</label>
+                        <textarea class="form-control" id="description" name="description" rows="4"
+                                  placeholder="Describe what students will learn in this course..."></textarea>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col">
+                            <a href="{{ url_for('teacher_dashboard') }}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Cancel
+                            </a>
+                        </div>
+                        <div class="col-auto">
+                            <button type="submit" class="btn btn-success btn-custom">
+                                <i class="fas fa-save"></i> Create Course
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

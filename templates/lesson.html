@@ -1,0 +1,427 @@
+<!-- templates/lesson.html -->
+{% extends "base.html" %}
+
+{% block title %}{{ lesson.title }} - GeoSmart Learn{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ url_for('view_course', course_id=course.id) }}" class="text-white">{{ course.title }}</a></li>
+                <li class="breadcrumb-item active text-white">{{ lesson.title }}</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h4><i class="fas fa-play-circle"></i> {{ lesson.title }}</h4>
+                {% if current_user.role == 'student' and progress and not progress.completed %}
+                    <button class="btn btn-success btn-sm float-end" onclick="markAsCompleted({{ lesson.id }})">
+                        <i class="fas fa-check"></i> Mark as Complete
+                    </button>
+                {% elif current_user.role == 'student' and progress and progress.completed %}
+                    <span class="badge bg-success float-end">
+                        <i class="fas fa-check"></i> Completed
+                    </span>
+                {% endif %}
+            </div>
+            <div class="card-body">
+                <p class="lead">{{ lesson.description }}</p>
+                
+                <!-- Video Section -->
+                {% if lesson.video_url %}
+                    <div class="mb-4">
+                        <h6><i class="fas fa-video"></i> Video Lesson</h6>
+                        <div class="ratio ratio-16x9">
+                            {% if 'youtube.com' in lesson.video_url or 'youtu.be' in lesson.video_url %}
+                                {% set video_id = lesson.video_url.split('v=')[1].split('&')[0] if 'v=' in lesson.video_url else lesson.video_url.split('/')[-1] %}
+                                <iframe src="https://www.youtube.com/embed/{{ video_id }}" 
+                                        title="Video Lesson" allowfullscreen></iframe>
+                            {% else %}
+                                <video controls>
+                                    <source src="{{ lesson.video_url }}" type="video/mp4">
+                                    Your browser does not support the video tag.
+                                </video>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endif %}
+                
+                <!-- Notes Section -->
+                {% if lesson.notes %}
+                    <div class="mb-4">
+                        <h6><i class="fas fa-sticky-note"></i> Lesson Notes</h6>
+                        <div class="card">
+                            <div class="card-body">
+                                <div style="white-space: pre-wrap;">{{ lesson.notes }}</div>
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+                
+                <!-- File Download -->
+                {% if lesson.content_file %}
+                    <div class="mb-4">
+                        <h6><i class="fas fa-file"></i> Study Materials</h6>
+                        <div class="card">
+                            <div class="card-body">
+                                <p><i class="fas fa-download"></i> <strong>{{ lesson.content_file }}</strong></p>
+                                <a href="{{ url_for('static', filename='uploads/' + lesson.content_file) }}" 
+                                   class="btn btn-outline-primary btn-sm" download>
+                                    <i class="fas fa-download"></i> Download
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+                
+                <!-- Quiz Section -->
+                {% if quiz_questions and current_user.role == 'student' %}
+                    <div class="mb-4">
+                        <h6><i class="fas fa-question-circle"></i> Quick Quiz</h6>
+                        <div id="quiz-container">
+                            <form id="quiz-form">
+                                {% for question in quiz_questions %}
+                                    <div class="card mb-3">
+                                        <div class="card-body">
+                                            <h6>{{ loop.index }}. {{ question.question }}</h6>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="q{{ question.id }}" value="A" id="q{{ question.id }}a">
+                                                <label class="form-check-label" for="q{{ question.id }}a">{{ question.option_a }}</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="q{{ question.id }}" value="B" id="q{{ question.id }}b">
+                                                <label class="form-check-label" for="q{{ question.id }}b">{{ question.option_b }}</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="q{{ question.id }}" value="C" id="q{{ question.id }}c">
+                                                <label class="form-check-label" for="q{{ question.id }}c">{{ question.option_c }}</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="q{{ question.id }}" value="D" id="q{{ question.id }}d">
+                                                <label class="form-check-label" for="q{{ question.id }}d">{{ question.option_d }}</label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                                <button type="button" class="btn btn-primary btn-custom" onclick="submitQuiz({{ lesson.id }})">
+                                    <i class="fas fa-check"></i> Submit Quiz
+                                </button>
+                            </form>
+                        </div>
+                        <div id="quiz-results" class="mt-3" style="display: none;"></div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <!-- AI Q&A Section -->
+        {% if current_user.role == 'student' %}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h6><i class="fas fa-robot"></i> Ask AI Assistant</h6>
+                </div>
+                <div class="card-body">
+                    <div id="chat-container" class="chat-container mb-3">
+                        <div class="text-center text-muted">
+                            <i class="fas fa-comments"></i>
+                            <p>Ask any question about this lesson!</p>
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="question-input" 
+                               placeholder="Ask a question..." onkeypress="handleEnter(event)">
+                        <button class="btn btn-primary" type="button" onclick="askQuestion({{ lesson.id }})">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </div>
+                    <small class="text-muted">AI answers are based on uploaded materials and lesson notes.</small>
+                </div>
+            </div>
+        {% endif %}
+
+        <!-- Summary Generation Section -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h6><i class="fas fa-file-alt"></i> Lesson Summary</h6>
+            </div>
+            <div class="card-body">
+                <p class="text-muted">Get an AI-generated summary of this lesson's content.</p>
+                <div class="btn-group mb-3" role="group">
+                    <button type="button" class="btn btn-outline-primary btn-sm" onclick="generateSummary({{ lesson.id }}, 'brief')">
+                        <i class="fas fa-compress-alt"></i> Brief
+                    </button>
+                    <button type="button" class="btn btn-outline-info btn-sm" onclick="generateSummary({{ lesson.id }}, 'key_points')">
+                        <i class="fas fa-list"></i> Key Points
+                    </button>
+                    <button type="button" class="btn btn-outline-success btn-sm" onclick="generateSummary({{ lesson.id }}, 'detailed')">
+                        <i class="fas fa-expand-alt"></i> Detailed
+                    </button>
+                </div>
+                <div id="summary-container" style="display: none;">
+                    <div class="card bg-light">
+                        <div class="card-body">
+                            <div id="summary-content"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Progress Card -->
+        {% if current_user.role == 'student' and progress %}
+            <div class="card">
+                <div class="card-header">
+                    <h6><i class="fas fa-chart-line"></i> Your Progress</h6>
+                </div>
+                <div class="card-body">
+                    <div class="text-center">
+                        {% if progress.completed %}
+                            <i class="fas fa-check-circle fa-3x text-success mb-2"></i>
+                            <h6 class="text-success">Lesson Completed!</h6>
+                            <p class="text-muted">Completed on {{ progress.completed_at.strftime('%Y-%m-%d') if progress.completed_at else 'Unknown' }}</p>
+                        {% else %}
+                            <i class="fas fa-clock fa-3x text-warning mb-2"></i>
+                            <h6 class="text-warning">In Progress</h6>
+                            <p class="text-muted">Complete the lesson to earn points!</p>
+                        {% endif %}
+                        
+                        {% if progress.quiz_score > 0 %}
+                            <div class="mt-3">
+                                <h6>Quiz Score: {{ progress.quiz_score }}%</h6>
+                                <div class="progress">
+                                    <div class="progress-bar {% if progress.quiz_score >= 80 %}bg-success{% elif progress.quiz_score >= 60 %}bg-warning{% else %}bg-danger{% endif %}" 
+                                         role="progressbar" style="width: {{ progress.quiz_score }}%"></div>
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function markAsCompleted(lessonId) {
+    fetch(`/complete_lesson/${lessonId}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Error marking lesson as complete');
+        }
+    });
+}
+
+function askQuestion(lessonId) {
+    const input = document.getElementById('question-input');
+    const question = input.value.trim();
+    
+    if (!question) return;
+    
+    const chatContainer = document.getElementById('chat-container');
+    
+    // Add question to chat
+    chatContainer.innerHTML += `
+        <div class="text-end mb-2">
+            <div class="question-bubble">${question}</div>
+        </div>
+    `;
+    
+    input.value = '';
+    input.disabled = true;
+    
+    // Add loading indicator
+    chatContainer.innerHTML += `
+        <div class="mb-2">
+            <div class="answer-bubble">
+                <i class="fas fa-spinner fa-spin"></i> Thinking...
+            </div>
+        </div>
+    `;
+    
+    chatContainer.scrollTop = chatContainer.scrollHeight;
+    
+    fetch('/ask_question', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            question: question,
+            lesson_id: lessonId
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        // Remove loading indicator
+        const loadingDiv = chatContainer.querySelector('.answer-bubble:last-child').parentNode;
+        loadingDiv.remove();
+        
+        // Add answer
+        chatContainer.innerHTML += `
+            <div class="mb-2">
+                <div class="answer-bubble">
+                    <i class="fas fa-robot"></i> ${data.answer}
+                </div>
+            </div>
+        `;
+        
+        input.disabled = false;
+        input.focus();
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        // Remove loading indicator
+        const loadingDiv = chatContainer.querySelector('.answer-bubble:last-child').parentNode;
+        loadingDiv.remove();
+        
+        chatContainer.innerHTML += `
+            <div class="mb-2">
+                <div class="answer-bubble text-danger">
+                    Sorry, there was an error processing your question.
+                </div>
+            </div>
+        `;
+        
+        input.disabled = false;
+        input.focus();
+    });
+}
+
+function handleEnter(event) {
+    if (event.key === 'Enter') {
+        const lessonId = {{ lesson.id }};
+        askQuestion(lessonId);
+    }
+}
+
+function submitQuiz(lessonId) {
+    const form = document.getElementById('quiz-form');
+    const formData = new FormData(form);
+    const answers = {};
+    
+    for (let [key, value] of formData.entries()) {
+        const questionId = key.substring(1); // Remove 'q' prefix
+        answers[questionId] = value;
+    }
+    
+    fetch(`/submit_quiz/${lessonId}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ answers: answers })
+    })
+    .then(response => response.json())
+    .then(data => {
+        const resultsDiv = document.getElementById('quiz-results');
+        resultsDiv.innerHTML = `
+            <div class="alert alert-info">
+                <h6><i class="fas fa-chart-bar"></i> Quiz Results</h6>
+                <p>Score: ${data.score}% (${data.correct}/${data.total} correct)</p>
+                <p>Points earned: ${Math.floor(data.score / 10)}</p>
+            </div>
+        `;
+        resultsDiv.style.display = 'block';
+        
+        // Disable form
+        const inputs = form.querySelectorAll('input, button');
+        inputs.forEach(input => input.disabled = true);
+    });
+}
+
+function generateSummary(lessonId, type) {
+    const summaryContainer = document.getElementById('summary-container');
+    const summaryContent = document.getElementById('summary-content');
+    
+    // Show loading
+    summaryContent.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating summary...';
+    summaryContainer.style.display = 'block';
+    
+    fetch('/api/generate_summary', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            lesson_id: lessonId,
+            type: type
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.summary) {
+            summaryContent.innerHTML = `
+                <h6><i class="fas fa-sparkles"></i> ${type.replace('_', ' ').toUpperCase()} SUMMARY</h6>
+                <div style="white-space: pre-wrap; line-height: 1.6;">${data.summary}</div>
+                <hr>
+                <small class="text-muted">
+                    <i class="fas fa-robot"></i> AI-generated from lesson materials • 
+                    <i class="fas fa-clock"></i> ${new Date().toLocaleString()}
+                </small>
+            `;
+        } else {
+            summaryContent.innerHTML = '<div class="text-danger">Error generating summary. Please try again.</div>';
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        summaryContent.innerHTML = '<div class="text-danger">Error generating summary. Please try again.</div>';
+    });
+}
+</script>
+
+<style>
+.chat-container {
+    background-image: 
+        radial-gradient(circle at 20% 50%, rgba(120, 119, 198, 0.05) 0%, transparent 50%),
+        radial-gradient(circle at 80% 20%, rgba(120, 119, 198, 0.05) 0%, transparent 50%),
+        radial-gradient(circle at 40% 80%, rgba(120, 119, 198, 0.05) 0%, transparent 50%);
+    min-height: 200px;
+    max-height: 400px;
+    overflow-y: auto;
+    border: 1px solid #ddd;
+    padding: 15px;
+    border-radius: 8px;
+    background-color: #f8f9fa;
+}
+
+.question-bubble {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 10px 15px;
+    border-radius: 18px;
+    max-width: 70%;
+    display: inline-block;
+    word-wrap: break-word;
+}
+
+.answer-bubble {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    padding: 10px 15px;
+    border-radius: 18px;
+    max-width: 80%;
+    display: inline-block;
+    word-wrap: break-word;
+}
+</style>
+{% endblock %}

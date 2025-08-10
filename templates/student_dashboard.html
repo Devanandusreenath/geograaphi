@@ -1,0 +1,327 @@
+<!-- templates/student_dashboard.html -->
+{% extends "base.html" %}
+
+{% block title %}Student Dashboard - GeoSmart Learn{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h2 class="text-white mb-4">
+            <i class="fas fa-book-open"></i> Welcome back, {{ current_user.username }}!
+        </h2>
+    </div>
+</div>
+
+<!-- Stats Row -->
+<div class="row mb-4">
+    <div class="col-md-3 mb-3">
+        <div class="card stats-card">
+            <div class="card-body text-center">
+                <i class="fas fa-trophy fa-2x mb-2"></i>
+                <h3>{{ current_user.points }}</h3>
+                <p class="mb-0">Points</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-3">
+        <div class="card stats-card">
+            <div class="card-body text-center">
+                <i class="fas fa-fire fa-2x mb-2"></i>
+                <h3>{{ current_user.streak_days }}</h3>
+                <p class="mb-0">Day Streak</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-3">
+        <div class="card stats-card">
+            <div class="card-body text-center">
+                <i class="fas fa-check-circle fa-2x mb-2"></i>
+                <h3>{{ progress|length }}</h3>
+                <p class="mb-0">Lessons Started</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-3">
+        <div class="card stats-card">
+            <div class="card-body text-center">
+                <i class="fas fa-graduation-cap fa-2x mb-2"></i>
+                {% set completed_count = progress|selectattr("completed")|list|length %}
+                <h3>{{ completed_count }}</h3>
+                <p class="mb-0">Completed</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Daily Challenge -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-calendar-day"></i> Daily Geography Fact</h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <i class="fas fa-lightbulb"></i> <strong>Did you know?</strong> {{ daily_fact }}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- My Learning Summary -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-chart-user"></i> My Learning Summary</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-8">
+                        <div id="learning-summary">
+                            <div class="text-center py-3">
+                                <button class="btn btn-primary btn-custom" onclick="loadMyProgress()">
+                                    <i class="fas fa-chart-line"></i> View My Progress Summary
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="text-center">
+                            <canvas id="progressChart" width="200" height="200"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Available Courses -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-book"></i> Available Courses</h5>
+            </div>
+            <div class="card-body">
+                {% if courses %}
+                    <div class="row">
+                        {% for course in courses %}
+                            <div class="col-md-6 mb-4">
+                                <div class="card lesson-card h-100">
+                                    <div class="card-body">
+                                        <h6 class="card-title">{{ course.title }}</h6>
+                                        <p class="card-text text-muted">{{ course.description }}</p>
+                                        
+                                        <!-- Fixed Progress Calculation -->
+                                        {% set course_lessons = course.lessons if course.lessons else [] %}
+                                        {% set course_progress_items = [] %}
+                                        {% for p in progress %}
+                                            {% if p.lesson and p.lesson.course_id == course.id %}
+                                                {% set _ = course_progress_items.append(p) %}
+                                            {% endif %}
+                                        {% endfor %}
+                                        
+                                        {% set completed_in_course = course_progress_items|selectattr("completed")|list|length %}
+                                        {% set total_in_course = course_lessons|length %}
+                                        
+                                        {% if total_in_course > 0 %}
+                                            <div class="mb-3">
+                                                <div class="d-flex justify-content-between mb-1">
+                                                    <small>Progress</small>
+                                                    <small>{{ completed_in_course }}/{{ total_in_course }} lessons</small>
+                                                </div>
+                                                <div class="progress">
+                                                    <div class="progress-bar bg-success" role="progressbar" 
+                                                         style="width: {{ (completed_in_course / total_in_course * 100) | round }}%"></div>
+                                                </div>
+                                            </div>
+                                        {% endif %}
+                                        
+                                        <a href="{{ url_for('view_course', course_id=course.id) }}" 
+                                           class="btn btn-primary btn-custom btn-sm">
+                                            <i class="fas fa-play"></i> 
+                                            {% if course_progress_items %}Continue{% else %}Start{% endif %} Learning
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-book fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">No courses available yet. Check back later!</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Activity -->
+{% if progress %}
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-history"></i> Recent Activity</h5>
+                </div>
+                <div class="card-body">
+                    {% for p in progress[-5:] %}
+                        {% if p.lesson %}
+                            <div class="d-flex justify-content-between align-items-center mb-2 p-2 bg-light rounded">
+                                <div>
+                                    <strong>{{ p.lesson.title }}</strong>
+                                    <small class="text-muted d-block">{{ p.lesson.course.title if p.lesson.course else 'Unknown Course' }}</small>
+                                </div>
+                                <div class="text-end">
+                                    {% if p.completed %}
+                                        <span class="badge bg-success">
+                                            <i class="fas fa-check"></i> Completed
+                                        </span>
+                                        {% if p.quiz_score > 0 %}
+                                            <small class="d-block text-muted">Score: {{ p.quiz_score }}%</small>
+                                        {% endif %}
+                                    {% else %}
+                                        <span class="badge bg-warning">
+                                            <i class="fas fa-clock"></i> In Progress
+                                        </span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+{% endif %}
+
+<!-- Quick Actions -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-bolt"></i> Quick Actions</h5>
+            </div>
+            <div class="card-body text-center">
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <a href="{{ url_for('ask_question') }}" class="btn btn-info btn-custom w-100">
+                            <i class="fas fa-question-circle"></i><br>
+                            Ask AI Assistant
+                        </a>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <a href="{{ url_for('leaderboard') }}" class="btn btn-warning btn-custom w-100">
+                            <i class="fas fa-trophy"></i><br>
+                            View Leaderboard
+                        </a>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <a href="{{ url_for('view_questions') }}" class="btn btn-secondary btn-custom w-100">
+                            <i class="fas fa-comments"></i><br>
+                            My Questions
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+function loadMyProgress() {
+    fetch(`/api/student_summary/{{ current_user.id }}`)
+    .then(response => response.json())
+    .then(data => {
+        const summaryDiv = document.getElementById('learning-summary');
+        summaryDiv.innerHTML = `
+            <div class="row">
+                <div class="col-md-6">
+                    <h6><i class="fas fa-trophy"></i> Learning Stats</h6>
+                    <ul class="list-unstyled">
+                        <li><strong>Lessons Completed:</strong> ${data.learning_stats.lessons_completed}/${data.learning_stats.total_lessons_enrolled}</li>
+                        <li><strong>Average Quiz Score:</strong> ${data.learning_stats.average_quiz_score}%</li>
+                        <li><strong>Questions Asked:</strong> ${data.learning_stats.total_questions_asked}</li>
+                        <li><strong>Completion Rate:</strong> ${data.learning_stats.completion_rate}%</li>
+                    </ul>
+                </div>
+                <div class="col-md-6">
+                    <h6><i class="fas fa-lightbulb"></i> Recommendations</h6>
+                    <ul>
+                        ${data.recommendations.map(rec => `<li>${rec}</li>`).join('')}
+                    </ul>
+                </div>
+            </div>
+            <hr>
+            <h6><i class="fas fa-history"></i> Recent Activity</h6>
+            <div class="row">
+                ${data.recent_activity.map(activity => `
+                    <div class="col-md-4 mb-2">
+                        <div class="card">
+                            <div class="card-body p-2">
+                                <small><strong>${activity.lesson}</strong></small><br>
+                                <small class="text-muted">${activity.completed} • Score: ${activity.score}%</small>
+                            </div>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+        
+        // Update progress chart
+        updateProgressChart(data.learning_stats.completion_rate);
+    })
+    .catch(error => {
+        console.error('Error loading progress:', error);
+        document.getElementById('learning-summary').innerHTML = 
+            '<div class="alert alert-warning">Unable to load progress summary. This feature requires the enhanced backend.</div>';
+    });
+}
+
+function updateProgressChart(completionRate) {
+    const ctx = document.getElementById('progressChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Completed', 'Remaining'],
+            datasets: [{
+                data: [completionRate, 100 - completionRate],
+                backgroundColor: ['#28a745', '#e9ecef'],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            }
+        }
+    });
+}
+
+// Initialize progress chart on load
+document.addEventListener('DOMContentLoaded', function() {
+    const completedLessons = {{ progress|selectattr("completed")|list|length }};
+    const totalLessons = {{ progress|length }};
+    const completionRate = totalLessons > 0 ? (completedLessons / totalLessons) * 100 : 0;
+    
+    if (totalLessons > 0) {
+        updateProgressChart(completionRate);
+    }
+});
+</script>
+{% endblock %}

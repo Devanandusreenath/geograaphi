@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+
+{% block title %}Questions - GeoSmart Learn{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h2 class="text-white mb-4">
+            <i class="fas fa-comments"></i> 
+            {% if current_user.role == 'teacher' %}Student Questions{% else %}My Questions{% endif %}
+        </h2>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                {% if questions %}
+                    {% for question in questions %}
+                        <div class="card question-card mb-3">
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-8">
+                                        <h6 class="card-title">{{ question.question_text }}</h6>
+                                        <small class="text-muted">
+                                            <i class="fas fa-user"></i> 
+                                            {% if current_user.role == 'teacher' %}
+                                                {{ question.student.username }}
+                                            {% else %}
+                                                You
+                                            {% endif %}
+                                            • <i class="fas fa-clock"></i> {{ question.created_at.strftime('%Y-%m-%d %H:%M') }}
+                                            • <i class="fas fa-book"></i> {{ question.lesson.title }}
+                                        </small>
+                                        
+                                        {% if question.is_answered and question.answer_text %}
+                                            <div class="mt-3">
+                                                <h6 class="text-success">
+                                                    <i class="fas fa-check-circle"></i> Answer:
+                                                </h6>
+                                                <div class="alert alert-light">
+                                                    {{ question.answer_text }}
+                                                </div>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="col-md-4 text-end">
+                                        {% if question.is_answered %}
+                                            <span class="badge bg-success">
+                                                <i class="fas fa-check"></i> Answered
+                                            </span>
+                                        {% else %}
+                                            <span class="badge bg-warning">
+                                                <i class="fas fa-clock"></i> Pending
+                                            </span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-comments fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">
+                            {% if current_user.role == 'teacher' %}
+                                No student questions yet.
+                            {% else %}
+                                You haven't asked any questions yet. Visit a lesson to start asking!
+                            {% endif %}
+                        </p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

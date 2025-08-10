@@ -1,0 +1,79 @@
+<!-- templates/create_lesson.html -->
+{% extends "base.html" %}
+
+{% block title %}Create Lesson - {{ course.title }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-10">
+        <div class="card">
+            <div class="card-header">
+                <h4><i class="fas fa-plus"></i> Add New Lesson to "{{ course.title }}"</h4>
+            </div>
+            <div class="card-body">
+                <form method="POST" enctype="multipart/form-data">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="title" class="form-label">Lesson Title *</label>
+                                <input type="text" class="form-control" id="title" name="title" 
+                                       placeholder="e.g., Introduction to Continents" required>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="description" class="form-label">Description</label>
+                                <textarea class="form-control" id="description" name="description" rows="3"
+                                          placeholder="Brief description of the lesson..."></textarea>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="video_url" class="form-label">Video URL (Optional)</label>
+                                <input type="url" class="form-control" id="video_url" name="video_url" 
+                                       placeholder="https://youtube.com/watch?v=... or direct video URL">
+                                <small class="form-text text-muted">YouTube, Vimeo, or direct video file URLs supported</small>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="content_file" class="form-label">Upload Study Materials</label>
+                                <input type="file" class="form-control" id="content_file" name="content_file" 
+                                       accept=".pdf,.docx,.txt">
+                                <small class="form-text text-muted">PDF, Word documents, or text files. This will be used for AI Q&A!</small>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="notes" class="form-label">Lesson Notes</label>
+                                <textarea class="form-control" id="notes" name="notes" rows="8"
+                                          placeholder="Add key points, summaries, or additional notes here. This will also be used for AI Q&A..."></textarea>
+                                <small class="form-text text-muted">These notes will be searchable by students for Q&A</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <hr class="my-4">
+                    
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i> 
+                        <strong>AI Q&A Training:</strong> When you upload files or add notes, our AI system will automatically process them 
+                        so students can ask questions and get instant answers!
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col">
+                            <a href="{{ url_for('view_course', course_id=course.id) }}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Back to Course
+                            </a>
+                        </div>
+                        <div class="col-auto">
+                            <button type="submit" class="btn btn-success btn-custom">
+                                <i class="fas fa-save"></i> Create Lesson
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,67 @@
+<!-- templates/index.html -->
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card text-center">
+            <div class="card-body p-5">
+                <h1 class="card-title display-4 mb-4">
+                    <i class="fas fa-globe-americas text-primary"></i><br>
+                    Welcome to GeoSmart Learn
+                </h1>
+                <p class="card-text lead mb-4">
+                    The ultimate geography learning platform with AI-powered Q&A, interactive lessons, and gamified learning experiences.
+                </p>
+                
+                {% if not current_user.is_authenticated %}
+                    <div class="row g-3 justify-content-center">
+                        <div class="col-auto">
+                            <a href="{{ url_for('register') }}" class="btn btn-primary btn-custom btn-lg">
+                                <i class="fas fa-user-plus"></i> Get Started
+                            </a>
+                        </div>
+                        <div class="col-auto">
+                            <a href="{{ url_for('login') }}" class="btn btn-outline-primary btn-custom btn-lg">
+                                <i class="fas fa-sign-in-alt"></i> Login
+                            </a>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-5">
+    <div class="col-md-4 mb-4">
+        <div class="card h-100 text-center">
+            <div class="card-body">
+                <i class="fas fa-robot fa-3x text-primary mb-3"></i>
+                <h5 class="card-title">AI-Powered Q&A</h5>
+                <p class="card-text">Ask questions and get instant answers from uploaded textbooks and lesson materials using advanced AI.</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4 mb-4">
+        <div class="card h-100 text-center">
+            <div class="card-body">
+                <i class="fas fa-video fa-3x text-success mb-3"></i>
+                <h5 class="card-title">Interactive Lessons</h5>
+                <p class="card-text">Watch video lessons, read digital textbooks, and complete quizzes to reinforce your learning.</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4 mb-4">
+        <div class="card h-100 text-center">
+            <div class="card-body">
+                <i class="fas fa-trophy fa-3x text-warning mb-3"></i>
+                <h5 class="card-title">Gamified Learning</h5>
+                <p class="card-text">Earn points, complete challenges, and compete with classmates on the leaderboard.</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

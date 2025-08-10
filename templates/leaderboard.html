@@ -1,0 +1,83 @@
+<!-- templates/leaderboard.html -->
+{% extends "base.html" %}
+
+{% block title %}Leaderboard - GeoSmart Learn{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h2 class="text-white mb-4">
+            <i class="fas fa-trophy"></i> Leaderboard
+        </h2>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-medal"></i> Top Students</h5>
+            </div>
+            <div class="card-body">
+                {% if students %}
+                    {% for student in students %}
+                        <div class="card {% if loop.index <= 3 %}stats-card{% else %}mb-2{% endif %} mb-3">
+                            <div class="card-body py-3">
+                                <div class="row align-items-center">
+                                    <div class="col-auto">
+                                        <div class="position-relative">
+                                            {% if loop.index == 1 %}
+                                                <i class="fas fa-crown fa-2x text-warning"></i>
+                                            {% elif loop.index == 2 %}
+                                                <i class="fas fa-medal fa-2x text-secondary"></i>
+                                            {% elif loop.index == 3 %}
+                                                <i class="fas fa-medal fa-2x" style="color: #CD7F32;"></i>
+                                            {% else %}
+                                                <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center" 
+                                                     style="width: 40px; height: 40px; font-weight: bold;">
+                                                    {{ loop.index }}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="col">
+                                        <h6 class="mb-0 {% if loop.index <= 3 %}text-white{% endif %}">
+                                            {{ student.username }}
+                                            {% if student.id == current_user.id %}
+                                                <span class="badge bg-info">You</span>
+                                            {% endif %}
+                                        </h6>
+                                        <small class="{% if loop.index <= 3 %}text-white-50{% else %}text-muted{% endif %}">
+                                            <i class="fas fa-fire"></i> {{ student.streak_days }} day streak
+                                        </small>
+                                    </div>
+                                    <div class="col-auto">
+                                        <h5 class="mb-0 {% if loop.index <= 3 %}text-white{% endif %}">
+                                            {{ student.points }}
+                                            <small>pts</small>
+                                        </h5>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-users fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">No students have earned points yet!</p>
+                    </div>
+                {% endif %}
+                
+                {% if current_user.role == 'student' %}
+                    <div class="text-center mt-4">
+                        <div class="alert alert-info">
+                            <i class="fas fa-lightbulb"></i>
+                            <strong>Tip:</strong> Complete lessons and score high on quizzes to earn more points and climb the leaderboard!
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
